@@ -13,7 +13,7 @@ cfg_if::cfg_if! {
 use crate::util;
 use std::path::Path;
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "espidf")))]
 use rustix::fs::{linkat, renameat, unlinkat, AtFlags, CWD};
 
 pub fn create_named(path: &Path, open_options: &mut OpenOptions) -> io::Result<File> {
@@ -100,7 +100,7 @@ pub fn reopen(_file: &File, _path: &Path) -> io::Result<File> {
     ));
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "espidf")))]
 pub fn persist(old_path: &Path, new_path: &Path, overwrite: bool) -> io::Result<()> {
     if overwrite {
         renameat(CWD, old_path, CWD, new_path)?;
@@ -134,10 +134,10 @@ pub fn persist(old_path: &Path, new_path: &Path, overwrite: bool) -> io::Result<
     Ok(())
 }
 
-#[cfg(target_os = "redox")]
+#[cfg(any(target_os = "redox", target_os = "espidf"))]
 pub fn persist(_old_path: &Path, _new_path: &Path, _overwrite: bool) -> io::Result<()> {
     // XXX implement when possible
-    Err(io::Error::from_raw_os_error(syscall::ENOSYS))
+    Err(io::Error::new(io::ErrorKind::Other, "operation not supported on this platform"))
 }
 
 pub fn keep(_: &Path) -> io::Result<()> {
